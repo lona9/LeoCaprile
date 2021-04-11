@@ -8,13 +8,12 @@ from apscheduler.triggers.cron import CronTrigger
 from discord.ext.commands import Bot as BotBase
 from discord.ext.commands import Context
 from discord.ext.commands import CommandNotFound
-from ..db import db
 
 PREFIX = '$'
 
 OWNER_IDS = [485054727755792410]
 
-COGS = []
+COGS = ["meta", "tareas"]
 
 class Ready(object):
   def __init__(self):
@@ -39,8 +38,6 @@ class Bot(BotBase):
 
     intents = Intents.default()
     intents.members = True
-
-    db.autosave(self.scheduler)
 
     super().__init__(
       command_prefix=PREFIX, 
@@ -105,9 +102,6 @@ class Bot(BotBase):
       self.guild = self.get_guild(804445063597129809)
       self.log = self.get_channel(830872167075938315)
       channel = self.log
-      self.scheduler.start()
-
-      self.update_db()
 
       await self.log.send("Estoy listo, estoy listo, estoy listo, estoy listo!")
       self.ready = True

@@ -1,4 +1,0 @@
-CREATE TABLE IF NOT EXISTS agenda (
-  XPLock text DEFAULT CURRENT_TIMESTAMP,
-  Tarea text DEFAULT vacio
-);
