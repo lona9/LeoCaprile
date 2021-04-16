@@ -63,7 +63,7 @@ class Tareas(Cog):
   async def listos(self, ctx):
     with open("/root/leocaprile/data/terminados.txt", "r") as f:
       terminadas = f.read()
-      if os.stat("/home/runner/leocaprile/data/terminados.txt").st_size == 0:
+      if os.stat("/root/leocaprile/data/terminados.txt").st_size == 0:
         await ctx.channel.send("No hay tareas terminadas.")
       else:
         await ctx.channel.send(terminadas)
