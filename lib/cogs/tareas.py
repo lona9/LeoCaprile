@@ -14,16 +14,16 @@ class Tareas(Cog):
       await ctx.channel.send("¡Debes escribir una tarea!")
     else:
       tarea = " ".join(args)
-      f = open('/home/runner/leocaprile/data/pendientes.txt', 'a')
+      f = open('/root/leocaprile/data/pendientes.txt', 'a')
       f.write("\n" + tarea)
       f.close()
       await ctx.channel.send("Tarea agregada.")
   
   @command(aliases=["p"])
   async def pendientes(self, ctx):
-    with open('/home/runner/leocaprile/data/pendientes.txt') as f:
+    with open('/root/leocaprile/data/pendientes.txt') as f:
       tareas = f.read().splitlines()
-      if os.stat("/home/runner/leocaprile/data/pendientes.txt").st_size == 0:
+      if os.stat("/root/leocaprile/data/pendientes.txt").st_size == 0:
         await ctx.channel.send("No hay tareas pendientes.")
       else:
         for tarea in tareas:
@@ -47,13 +47,13 @@ class Tareas(Cog):
 
         check_task = content + " ✅"
 
-        f = open('/home/runner/leocaprile/data/terminados.txt', 'a')
+        f = open('/root/leocaprile/data/terminados.txt', 'a')
         f.write(check_task + "\n")
         f.close()
 
-        with open("/home/runner/leocaprile/data/pendientes.txt", "r") as f:
+        with open("/root/leocaprile/data/pendientes.txt", "r") as f:
           lines = f.readlines()
-        with open("/home/runner/leocaprile/data/pendientes.txt", "w") as f:
+        with open("/root/leocaprile/data/pendientes.txt", "w") as f:
           for line in lines:
             if line.strip("\n") != message.content:
               f.write(line)
@@ -61,7 +61,7 @@ class Tareas(Cog):
 
   @command(aliases=["terminados", "done", "l"])
   async def listos(self, ctx):
-    with open("/home/runner/leocaprile/data/terminados.txt", "r") as f:
+    with open("/root/leocaprile/data/terminados.txt", "r") as f:
       terminadas = f.read()
       if os.stat("/home/runner/leocaprile/data/terminados.txt").st_size == 0:
         await ctx.channel.send("No hay tareas terminadas.")
@@ -70,7 +70,7 @@ class Tareas(Cog):
 
   @command()
   async def clear(self, ctx):
-    open("/home/runner/leocaprile/data/terminados.txt", "w").close()
+    open("/root/leocaprile/data/terminados.txt", "w").close()
     await ctx.channel.send("¡Limpiado!")
     
 
