@@ -8,13 +8,16 @@ class Tareas(Cog):
   def __init__(self, bot):
     self.bot = bot
 
-  @command(name="tarea", aliases=["add", "t", "a"])
+  @command(name="tarea", aliases=["t"])
   async def tarea(self, ctx, *args):
-    tarea = " ".join(args)
-    f = open('/home/runner/leocaprile/data/pendientes.txt', 'a')
-    f.write(tarea + "\n")
-    f.close()
-    await ctx.channel.send("Tarea agregada.")
+    if args == ():
+      await ctx.channel.send("¡Debes escribir una tarea!")
+    else:
+      tarea = " ".join(args)
+      f = open('/home/runner/leocaprile/data/pendientes.txt', 'a')
+      f.write("\n" + tarea)
+      f.close()
+      await ctx.channel.send("Tarea agregada.")
   
   @command(aliases=["p"])
   async def pendientes(self, ctx):
@@ -24,8 +27,11 @@ class Tareas(Cog):
         await ctx.channel.send("No hay tareas pendientes.")
       else:
         for tarea in tareas:
-          msg = await ctx.channel.send(tarea)
-          await msg.add_reaction("✅")
+          if tarea == '':
+            pass
+          else:
+            msg = await ctx.channel.send(tarea)
+            await msg.add_reaction("✅")
   
     
   @Cog.listener()
@@ -52,14 +58,21 @@ class Tareas(Cog):
             if line.strip("\n") != message.content:
               f.write(line)
 
-  @command(aliases=["terminadas", "done", "d"])
-  async def terminados(self, ctx):
+
+  @command(aliases=["terminados", "done", "l"])
+  async def listos(self, ctx):
     with open("/home/runner/leocaprile/data/terminados.txt", "r") as f:
       terminadas = f.read()
       if os.stat("/home/runner/leocaprile/data/terminados.txt").st_size == 0:
         await ctx.channel.send("No hay tareas terminadas.")
       else:
         await ctx.channel.send(terminadas)
+
+  @command()
+  async def clear(self, ctx):
+    open("/home/runner/leocaprile/data/terminados.txt", "w").close()
+    await ctx.channel.send("¡Limpiado!")
+    
 
   @Cog.listener()
   async def on_ready(self):
