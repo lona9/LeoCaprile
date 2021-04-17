@@ -18,7 +18,7 @@ class Tareas(Cog):
       f.write("\n" + tarea)
       f.close()
       await ctx.channel.send("Tarea agregada.")
-  
+
   @command(aliases=["p"])
   async def pendientes(self, ctx):
     with open('/root/leocaprile/data/pendientes.txt') as f:
@@ -32,13 +32,13 @@ class Tareas(Cog):
           else:
             msg = await ctx.channel.send(tarea)
             await msg.add_reaction("✅")
-  
-    
+
+
   @Cog.listener()
   async def on_raw_reaction_add(self, payload):
     if payload.member.bot:
       pass
-    
+
     else:
       if payload.emoji.name == "✅":
         channel = self.bot.get_channel(payload.channel_id)
@@ -68,11 +68,15 @@ class Tareas(Cog):
       else:
         await ctx.channel.send(terminadas)
 
-  @command()
+  @command(aliases=["lc"])
   async def clear(self, ctx):
     open("/root/leocaprile/data/terminados.txt", "w").close()
-    await ctx.channel.send("¡Limpiado!")
-    
+    await ctx.channel.send("¡Terminados limpio!")
+
+  @command(aliases=["pc"])
+  async def pclear(self, ctx):
+    open("/root/leocaprile/data/pendientes.txt", "w").close()
+    await ctx.channel.send("¡Pendientes limpio!")
 
   @Cog.listener()
   async def on_ready(self):
