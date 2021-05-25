@@ -78,6 +78,19 @@ class Tareas(Cog):
     open("/root/leocaprile/data/pendientes.txt", "w").close()
     await ctx.channel.send("¡Pendientes limpio!")
 
+  @command(aliases=["r"])
+  async def reminder(self, ctx, *args):
+      # time message wait for
+      if "m" in args:
+          minutes = [x for x in args if x.isdigit()]
+          remindertime = int(minutes) * 60
+      if "h" in args:
+          hours = [x for x in args if x.isdigit()]
+          remindertime = int(hours) * 3600
+      # reminder message wait for
+      time.sleep(remindertime)
+      await ctx.send(f"{reminder_text}")
+
   @Cog.listener()
   async def on_ready(self):
     if not self.bot.ready:
