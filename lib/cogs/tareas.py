@@ -14,16 +14,16 @@ class Tareas(Cog):
       await ctx.channel.send("¡Debes escribir una tarea!")
     else:
       tarea = " ".join(args)
-      f = open('/root/leocaprile/data/pendientes.txt', 'a')
+      f = open('/root/LeoCaprile/data/pendientes.txt', 'a')
       f.write("\n" + tarea)
       f.close()
       await ctx.channel.send("Tarea agregada.")
 
   @command(aliases=["p"])
   async def pendientes(self, ctx):
-    with open('/root/leocaprile/data/pendientes.txt') as f:
+    with open('/root/LeoCaprile/data/pendientes.txt') as f:
       tareas = f.read().splitlines()
-      if os.stat("/root/leocaprile/data/pendientes.txt").st_size == 0:
+      if os.stat("/root/LeoCaprile/data/pendientes.txt").st_size == 0:
         await ctx.channel.send("No hay tareas pendientes.")
       else:
         for tarea in tareas:
@@ -47,13 +47,13 @@ class Tareas(Cog):
 
         check_task = content + " ✅"
 
-        f = open('/root/leocaprile/data/terminados.txt', 'a')
+        f = open('/root/LeoCaprile/data/terminados.txt', 'a')
         f.write(check_task + "\n")
         f.close()
 
-        with open("/root/leocaprile/data/pendientes.txt", "r") as f:
+        with open("/root/LeoCaprile/data/pendientes.txt", "r") as f:
           lines = f.readlines()
-        with open("/root/leocaprile/data/pendientes.txt", "w") as f:
+        with open("/root/LeoCaprile/data/pendientes.txt", "w") as f:
           for line in lines:
             if line.strip("\n") != message.content:
               f.write(line)
@@ -61,35 +61,23 @@ class Tareas(Cog):
 
   @command(aliases=["terminados", "done", "l"])
   async def listos(self, ctx):
-    with open("/root/leocaprile/data/terminados.txt", "r") as f:
+    with open("/root/LeoCaprile/data/terminados.txt", "r") as f:
       terminadas = f.read()
-      if os.stat("/root/leocaprile/data/terminados.txt").st_size == 0:
+      if os.stat("/root/LeoCaprile/data/terminados.txt").st_size == 0:
         await ctx.channel.send("No hay tareas terminadas.")
       else:
         await ctx.channel.send(terminadas)
 
   @command(aliases=["lc"])
   async def clear(self, ctx):
-    open("/root/leocaprile/data/terminados.txt", "w").close()
+    open("/root/LeoCaprile/data/terminados.txt", "w").close()
     await ctx.channel.send("¡Terminados limpio!")
 
   @command(aliases=["pc"])
   async def pclear(self, ctx):
-    open("/root/leocaprile/data/pendientes.txt", "w").close()
+    open("/root/LeoCaprile/data/pendientes.txt", "w").close()
     await ctx.channel.send("¡Pendientes limpio!")
 
-  @command(aliases=["r"])
-  async def reminder(self, ctx, *args):
-      # time message wait for
-      if "m" in args:
-          minutes = [x for x in args if x.isdigit()]
-          remindertime = int(minutes) * 60
-      if "h" in args:
-          hours = [x for x in args if x.isdigit()]
-          remindertime = int(hours) * 3600
-      # reminder message wait for
-      time.sleep(remindertime)
-      await ctx.send(f"{reminder_text}")
 
   @Cog.listener()
   async def on_ready(self):

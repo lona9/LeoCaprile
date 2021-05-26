@@ -8,11 +8,13 @@ from discord.ext.commands import Bot as BotBase
 from discord.ext.commands import Context
 from discord.ext.commands import CommandNotFound
 
+from ..db import db
+
 PREFIX = '$'
 
 OWNER_IDS = [485054727755792410]
 
-COGS = ["meta", "tareas"]
+COGS = ["meta", "tareas", "reminders"]
 
 class Ready(object):
   def __init__(self):
@@ -38,8 +40,10 @@ class Bot(BotBase):
     intents = Intents.default()
     intents.members = True
 
+    db.autosave(self.scheduler)
+
     super().__init__(
-      command_prefix=PREFIX, 
+      command_prefix=PREFIX,
       owner_ids=OWNER_IDS,
       intents=Intents.all()
       )
@@ -49,8 +53,7 @@ class Bot(BotBase):
       self.load_extension(f"lib.cogs.{cog}")
       print(f" {cog} cog loaded")
 
-    print("setup complete") 
-
+    print("setup complete")
 
   def run(self, version):
       self.VERSION = version
@@ -70,7 +73,7 @@ class Bot(BotBase):
     if ctx.command is not None:
       if self.ready:
         await self.invoke(ctx)
-    
+
       else:
         await ctx.send("Aún no estoy listo para recibir comandos, por favor espera unos segundos.")
 
@@ -102,6 +105,8 @@ class Bot(BotBase):
       self.log = self.get_channel(830872167075938315)
       channel = self.log
 
+      self.scheduler.start()
+
       await self.log.send("Estoy listo, estoy listo, estoy listo, estoy listo!")
       self.ready = True
       print("bot ready")
@@ -113,7 +118,7 @@ class Bot(BotBase):
       print("bot reconnected")
 
   async def on_message(self, message):
-      
+
     if not message.author.bot:
       await self.process_commands(message)
 
