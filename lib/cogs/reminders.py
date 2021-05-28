@@ -26,32 +26,40 @@ class Reminders(Cog):
 
       rm_id = random.randint(1, 10000)
 
-      db.execute("INSERT OR IGNORE INTO reminders (ReminderID, ReminderTime) VALUES (?, ?)", rm_id, reminder_time)
+      db.execute("INSERT OR IGNORE INTO reminders (ReminderID, ReminderTime, ReminderText) VALUES (?, ?, ?)", rm_id, reminder_time, remindertext)
 
       db.commit()
 
-      await ctx.send(f"Te recordaré de {remindertext} en {time}.")
+      await ctx.send(f"Te recordaré de **{remindertext}** en **{time}**.")
 
-      self.check_reminder.start(ctx, rm_id, remindertext)
+      self.check_reminder.start(ctx)
 
+  @tasks.loop(seconds = 1)
+  async def check_reminder(self, ctx):
+    stored_reminders = db.column("SELECT ReminderID FROM reminders")
 
-  @tasks.loop(seconds = 10)
-  async def check_reminder(self, ctx, rm_id, remindertext):
-
-    time_to_check = db.record("SELECT ReminderTime FROM reminders WHERE ReminderID = ?", rm_id)
-
-    time_to_check = pd.to_datetime(time_to_check)
-
-    if time_to_check > datetime.now():
-        pass
-    else:
-        await ctx.send(f"<@485054727755792410>: acuérdate de {remindertext}!")
-
-        db.execute("DELETE FROM reminders WHERE ReminderID = ?", rm_id)
-
-        db.commit()
-
+    if stored_reminders == ():
         self.check_reminder.stop()
+
+    else:
+        for reminder_id in stored_reminders:
+            time_to_check = db.record("SELECT ReminderTime FROM reminders WHERE ReminderID = ?", reminder_id)
+
+            time_to_check = pd.to_datetime(time_to_check)
+
+            if time_to_check > datetime.now():
+                continue
+
+            else:
+                remindertext = db.record("SELECT ReminderText FROM reminders WHERE ReminderID = ?", reminder_id)
+
+                remindertext = str(remindertext[0])
+
+                await ctx.send(f"<@485054727755792410>: recuerda **{remindertext}**!")
+
+                db.execute("DELETE FROM reminders WHERE ReminderID = ?", reminder_id)
+
+                db.commit()
 
   @Cog.listener()
   async def on_ready(self):
