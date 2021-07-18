@@ -4,6 +4,7 @@ from discord.ext.commands import command
 from datetime import datetime
 from discord.ext import tasks
 from datetime import timedelta
+from discord.utils import get
 from..db import db
 import random
 import pandas as pd
@@ -11,31 +12,39 @@ import pandas as pd
 class Reminders(Cog):
   def __init__(self, bot):
     self.bot = bot
+    self.check_reminder.start()
 
-  @command(aliases=["r"])
+  @command(aliases=["r", "reminder"])
   async def set_reminder(self, ctx, time, *args):
       time_conversion = {"s": 1, "m": 60, "h": 3600, "d": 86400}
       raw_time = int("".join([x for x in time if x.isdigit()]))
       time_unit = time[-1]
-      time_to_add = raw_time * time_conversion[time_unit]
 
-      remindertext = str(" ".join(args))
+      if not time_unit.isalpha():
+          await ctx.send("You need to enter a valid time period!")
 
-      reminder_time = datetime.now() + timedelta(seconds=time_to_add)
-      print(reminder_time)
+      else:
+          time_to_add = raw_time * time_conversion[time_unit]
 
-      rm_id = random.randint(1, 10000)
+          remindertext = str(" ".join(args))
 
-      db.execute("INSERT OR IGNORE INTO reminders (ReminderID, ReminderTime, ReminderText) VALUES (?, ?, ?)", rm_id, reminder_time, remindertext)
+          reminder_time = datetime.now() + timedelta(seconds=time_to_add)
+          print(reminder_time)
 
-      db.commit()
+          rm_id = random.randint(1, 10000)
 
-      await ctx.send(f"Te recordaré de **{remindertext}** en **{time}**.")
+          author = ctx.message.author.mention
 
-      self.check_reminder.start(ctx)
+          channel = ctx.channel.id
+
+          db.execute("INSERT OR IGNORE INTO reminders (ReminderID, ReminderTime, ReminderText, ReminderAuthor, ReminderChannel) VALUES (?, ?, ?, ?, ?)", rm_id, reminder_time, remindertext, author, channel)
+
+          db.commit()
+
+          await ctx.send(f"I'll remind you of **{remindertext}** in **{time}**.")
 
   @tasks.loop(seconds = 1)
-  async def check_reminder(self, ctx):
+  async def check_reminder(self):
     stored_reminders = db.column("SELECT ReminderID FROM reminders")
 
     if stored_reminders == ():
@@ -53,13 +62,27 @@ class Reminders(Cog):
             else:
                 remindertext = db.record("SELECT ReminderText FROM reminders WHERE ReminderID = ?", reminder_id)
 
+                reminderauthor = db.record("SELECT ReminderAuthor FROM reminders WHERE ReminderID = ?", reminder_id)
+
+                reminderchannel = db.record("SELECT ReminderChannel FROM reminders WHERE ReminderID = ?", reminder_id)
+
                 remindertext = str(remindertext[0])
 
-                await ctx.send(f"<@485054727755792410>: recuerda **{remindertext}**!")
+                reminderauthor = str(reminderauthor[0])
+
+                channel = int(reminderchannel[0])
+
+                channel = self.bot.get_channel(channel)
+
+                await channel.send(f"{reminderauthor}: remember **{remindertext}**!")
 
                 db.execute("DELETE FROM reminders WHERE ReminderID = ?", reminder_id)
 
                 db.commit()
+
+  @check_reminder.before_loop
+  async def before_check(self):
+      await self.bot.wait_until_ready()
 
   @Cog.listener()
   async def on_ready(self):

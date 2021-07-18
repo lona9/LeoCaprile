@@ -1,38 +1,66 @@
 from discord.ext.commands import Cog
 from apscheduler.triggers.cron import CronTrigger
-from discord import Activity, ActivityType
 from discord.ext.commands import command
-import os
+from datetime import datetime
+from discord.ext import tasks
+from discord.utils import get
+from..db import db
 
 class Tareas(Cog):
   def __init__(self, bot):
     self.bot = bot
 
-  @command(name="tarea", aliases=["t"])
-  async def tarea(self, ctx, *args):
-    if args == ():
-      await ctx.channel.send("¡Debes escribir una tarea!")
-    else:
-      tarea = " ".join(args)
-      f = open('/root/LeoCaprile/data/pendientes.txt', 'a')
-      f.write("\n" + tarea)
-      f.close()
-      await ctx.channel.send("Tarea agregada.")
+  @command(aliases=["t"])
+  async def set_task(self, ctx, *args):
+      tasktext = str(" ".join(args))
 
-  @command(aliases=["p"])
-  async def pendientes(self, ctx):
-    with open('/root/LeoCaprile/data/pendientes.txt') as f:
-      tareas = f.read().splitlines()
-      if os.stat("/root/LeoCaprile/data/pendientes.txt").st_size == 0:
-        await ctx.channel.send("No hay tareas pendientes.")
+      taskid = datetime.now().strftime("%d/%m %%H%M%S")
+
+      taskstatus = "pending"
+
+      db.execute("INSERT OR IGNORE INTO tasks (TaskID, TaskText, TaskStatus) VALUES (?, ?, ?)", taskid, tasktext, taskstatus)
+
+      db.commit()
+
+      await ctx.send("Tarea agregada!")
+
+  @command(aliases=["p", "pending"])
+  async def check_pending(self, ctx):
+      pending = "pending"
+      pending_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ?", pending)
+      print(pending_tasks)
+
+      if pending_tasks == []:
+          await ctx.send("No hay tareas pendientes.")
       else:
-        for tarea in tareas:
-          if tarea == '':
-            pass
-          else:
-            msg = await ctx.channel.send(tarea)
-            await msg.add_reaction("✅")
+          for task in pending_tasks:
+              taskmsg = await ctx.send(task)
+              await taskmsg.add_reaction("✅")
 
+  @command(aliases=["l", "listas"])
+  async def check_done(self, ctx):
+      done = "done"
+      done_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ?", done)
+
+      if done_tasks == []:
+          await ctx.send("No hay tareas listas.")
+      else:
+          for task in done_tasks:
+              taskmsg = await ctx.send(f"{task} :white_check_mark:")
+
+  @command(aliases=["pc"])
+  async def pending_clear(self, ctx):
+      pending = "pending"
+      db.execute("DELETE FROM tasks WHERE TaskStatus = ?", pending)
+      db.commit()
+      await ctx.send("Lista de pendientes borrada!")
+
+  @command(aliases=["lc"])
+  async def done_clear(self, ctx):
+      done = "done"
+      db.execute("DELETE FROM tasks WHERE TaskStatus = ?", done)
+      db.commit()
+      await ctx.send("Lista de completadas borrada!")
 
   @Cog.listener()
   async def on_raw_reaction_add(self, payload):
@@ -45,39 +73,9 @@ class Tareas(Cog):
         message = await channel.fetch_message(payload.message_id)
         content = message.content
 
-        check_task = content + " ✅"
-
-        f = open('/root/LeoCaprile/data/terminados.txt', 'a')
-        f.write(check_task + "\n")
-        f.close()
-
-        with open("/root/LeoCaprile/data/pendientes.txt", "r") as f:
-          lines = f.readlines()
-        with open("/root/LeoCaprile/data/pendientes.txt", "w") as f:
-          for line in lines:
-            if line.strip("\n") != message.content:
-              f.write(line)
-
-
-  @command(aliases=["terminados", "done", "l"])
-  async def listos(self, ctx):
-    with open("/root/LeoCaprile/data/terminados.txt", "r") as f:
-      terminadas = f.read()
-      if os.stat("/root/LeoCaprile/data/terminados.txt").st_size == 0:
-        await ctx.channel.send("No hay tareas terminadas.")
-      else:
-        await ctx.channel.send(terminadas)
-
-  @command(aliases=["lc"])
-  async def clear(self, ctx):
-    open("/root/LeoCaprile/data/terminados.txt", "w").close()
-    await ctx.channel.send("¡Terminados limpio!")
-
-  @command(aliases=["pc"])
-  async def pclear(self, ctx):
-    open("/root/LeoCaprile/data/pendientes.txt", "w").close()
-    await ctx.channel.send("¡Pendientes limpio!")
-
+        done = "done"
+        db.execute("UPDATE tasks SET TaskStatus = ? WHERE TaskText = ?", done, content)
+        db.commit()
 
   @Cog.listener()
   async def on_ready(self):
