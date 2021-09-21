@@ -14,15 +14,19 @@ class Tareas(Cog):
   async def set_task(self, ctx, *args):
       tasktext = str(" ".join(args))
 
-      taskid = datetime.now().strftime("%d/%m %%H%M%S")
+      taskid = datetime.now().strftime("%d/%m %H:%M:%S")
 
       taskstatus = "pending"
 
-      db.execute("INSERT OR IGNORE INTO tasks (TaskID, TaskText, TaskStatus) VALUES (?, ?, ?)", taskid, tasktext, taskstatus)
+      if args == []:
+          await ctx.send("Tarea vacía.")
 
-      db.commit()
+      else:
+          db.execute("INSERT OR IGNORE INTO tasks (TaskID, TaskText, TaskStatus) VALUES (?, ?, ?)", taskid, tasktext, taskstatus)
 
-      await ctx.send("Tarea agregada!")
+          db.commit()
+
+          await ctx.send("Tarea agregada!")
 
   @command(aliases=["p", "pending"])
   async def check_pending(self, ctx):
@@ -34,8 +38,11 @@ class Tareas(Cog):
           await ctx.send("No hay tareas pendientes.")
       else:
           for task in pending_tasks:
-              taskmsg = await ctx.send(task)
-              await taskmsg.add_reaction("✅")
+              try:
+                  taskmsg = await ctx.send(task)
+                  await taskmsg.add_reaction("✅")
+              except:
+                  pass
 
   @command(aliases=["l", "listas"])
   async def check_done(self, ctx):
