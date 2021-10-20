@@ -21,7 +21,7 @@ class Reminders(Cog):
       time_unit = time[-1]
 
       if not time_unit.isalpha():
-          await ctx.send("You need to enter a valid time period!")
+          await ctx.send("Input inválido!")
 
       else:
           time_to_add = raw_time * time_conversion[time_unit]
@@ -41,7 +41,7 @@ class Reminders(Cog):
 
           db.commit()
 
-          await ctx.send(f"I'll remind you of **{remindertext}** in **{time}**.")
+          await ctx.send(f"Te recordaré **{remindertext}** en **{time}**.")
 
   @tasks.loop(seconds = 1)
   async def check_reminder(self):
@@ -74,7 +74,7 @@ class Reminders(Cog):
 
                 channel = self.bot.get_channel(channel)
 
-                await channel.send(f"{reminderauthor}: remember **{remindertext}**!")
+                await channel.send(f"{reminderauthor}: recuerda **{remindertext}**!")
 
                 db.execute("DELETE FROM reminders WHERE ReminderID = ?", reminder_id)
 

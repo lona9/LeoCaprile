@@ -9,51 +9,92 @@ from..db import db
 class Tareas(Cog):
   def __init__(self, bot):
     self.bot = bot
-
+    
   @command(aliases=["t"])
   async def set_task(self, ctx, *args):
-      tasktext = str(" ".join(args))
 
-      taskid = datetime.now().strftime("%d/%m %H:%M:%S")
-
-      taskstatus = "pending"
+      first_word = args[0]
 
       if args == []:
-          await ctx.send("Tarea vacía.")
+          await ctx.send("Mensaje inválido!")
 
-      else:
-          db.execute("INSERT OR IGNORE INTO tasks (TaskID, TaskText, TaskStatus) VALUES (?, ?, ?)", taskid, tasktext, taskstatus)
+      elif first_word in ["corner", "super"]:
+          tasktext = str(" ".join(args[1:]))
+
+          taskid = datetime.now().strftime("%d/%m %H:%M:%S")
+
+          taskstatus = "pending"
+
+          category = first_word
+
+          db.execute("INSERT OR IGNORE INTO tasks (TaskID, TaskText, TaskStatus, TaskCategory) VALUES (?, ?, ?, ?)", taskid, tasktext, taskstatus, category)
 
           db.commit()
 
-          await ctx.send("Tarea agregada!")
+          await ctx.send(f"Tarea guardada bajo **{category}**.")
+
+      else:
+          tasktext = str(" ".join(args))
+
+          taskid = datetime.now().strftime("%d/%m %H:%M:%S")
+
+          taskstatus = "pending"
+
+          category = "Otros"
+
+          db.execute("INSERT OR IGNORE INTO tasks (TaskID, TaskText, TaskStatus, TaskCategory) VALUES (?, ?, ?, ?)", taskid, tasktext, taskstatus, category)
+
+          db.commit()
+
+          await ctx.send(f"Tarea guardada bajo **{category}**.")
+
 
   @command(aliases=["p", "pending"])
-  async def check_pending(self, ctx):
-      pending = "pending"
-      pending_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ?", pending)
-      print(pending_tasks)
+  async def check_pending(self, ctx, *args):
 
-      if pending_tasks == []:
-          await ctx.send("No hay tareas pendientes.")
-      else:
+      pending = "pending"
+
+      if args != ():
+          category = str("".join(args))
+
+          await ctx.send(f"**Categoría {category}**")
+          pending_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ? AND TaskCategory = ?", pending, category)
+
           for task in pending_tasks:
-              try:
-                  taskmsg = await ctx.send(task)
-                  await taskmsg.add_reaction("✅")
-              except:
-                  pass
+              taskmsg = await ctx.send(task)
+              await taskmsg.add_reaction("✅")
+
+      else:
+          categories = db.column("SELECT DISTINCT TaskCategory FROM tasks WHERE TaskStatus = ?", pending)
+
+          if categories == []:
+              await ctx.send("No hay tareas pendientes.")
+
+          else:
+                    for category in categories:
+                        await ctx.send(f"**Categoría {category}**")
+                        pending_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ? AND TaskCategory = ?", pending, category)
+
+                        for task in pending_tasks:
+                            taskmsg = await ctx.send(task)
+                            await taskmsg.add_reaction("✅")
 
   @command(aliases=["l", "listas"])
   async def check_done(self, ctx):
       done = "done"
-      done_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ?", done)
+      categories = db.column("SELECT DISTINCT TaskCategory FROM tasks WHERE TaskStatus = ?", done)
 
-      if done_tasks == []:
-          await ctx.send("No hay tareas listas.")
+      if categories == []:
+          await ctx.send("No hay tareas completadas.")
       else:
-          for task in done_tasks:
-              taskmsg = await ctx.send(f"{task} :white_check_mark:")
+          for category in categories:
+              await ctx.send(f"**{category} category**")
+
+              done_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ? AND TaskCategory = ?", done, category)
+
+              for task in done_tasks:
+                  taskmsg = await ctx.send(task)
+
 
   @command(aliases=["pc"])
   async def pending_clear(self, ctx):
