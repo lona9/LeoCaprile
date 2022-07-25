@@ -9,29 +9,33 @@ from..db import db
 class Tareas(Cog):
   def __init__(self, bot):
     self.bot = bot
-    
+
   @command(aliases=["t"])
   async def set_task(self, ctx, *args):
 
-      first_word = args[0]
+      print(args)
 
-      if args == []:
+      if args == ():
           await ctx.send("Mensaje inválido!")
 
-      elif first_word in ["corner", "super"]:
-          tasktext = str(" ".join(args[1:]))
+      elif args[0] in ["corner", "super"]:
+          if len(args) == 1:
+              await ctx.send("Mensaje inválido!")
 
-          taskid = datetime.now().strftime("%d/%m %H:%M:%S")
+          else:
+              tasktext = str(" ".join(args[1:]))
 
-          taskstatus = "pending"
+              taskid = datetime.now().strftime("%d/%m %H:%M:%S")
 
-          category = first_word
+              taskstatus = "pending"
 
-          db.execute("INSERT OR IGNORE INTO tasks (TaskID, TaskText, TaskStatus, TaskCategory) VALUES (?, ?, ?, ?)", taskid, tasktext, taskstatus, category)
+              category = args[0]
 
-          db.commit()
+              db.execute("INSERT OR IGNORE INTO tasks (TaskID, TaskText, TaskStatus, TaskCategory) VALUES (?, ?, ?, ?)", taskid, tasktext, taskstatus, category)
 
-          await ctx.send(f"Tarea guardada bajo **{category}**.")
+              db.commit()
+
+              await ctx.send(f"Tarea guardada bajo **{category}**.")
 
       else:
           tasktext = str(" ".join(args))
@@ -61,8 +65,11 @@ class Tareas(Cog):
           pending_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ? AND TaskCategory = ?", pending, category)
 
           for task in pending_tasks:
-              taskmsg = await ctx.send(task)
-              await taskmsg.add_reaction("✅")
+              try:
+                  taskmsg = await ctx.send(task)
+                  await taskmsg.add_reaction("✅")
+              except:
+                  pass
 
       else:
           categories = db.column("SELECT DISTINCT TaskCategory FROM tasks WHERE TaskStatus = ?", pending)
@@ -76,8 +83,11 @@ class Tareas(Cog):
                         pending_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ? AND TaskCategory = ?", pending, category)
 
                         for task in pending_tasks:
-                            taskmsg = await ctx.send(task)
-                            await taskmsg.add_reaction("✅")
+                            try:
+                                taskmsg = await ctx.send(task)
+                                await taskmsg.add_reaction("✅")
+                            except:
+                                pass
 
   @command(aliases=["l", "listas"])
   async def check_done(self, ctx):
@@ -93,7 +103,10 @@ class Tareas(Cog):
               done_tasks = db.column("SELECT TaskText FROM tasks WHERE TaskStatus = ? AND TaskCategory = ?", done, category)
 
               for task in done_tasks:
-                  taskmsg = await ctx.send(task)
+                  try:
+                      taskmsg = await ctx.send(task)
+                  except:
+                      pass
 
 
   @command(aliases=["pc"])
